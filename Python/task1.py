@@ -3,6 +3,8 @@ import copy
 
 DEFAULT  = "default"
 FUNCTION = "function"
+DEBUG = False
+
 functions = {}
 
 class Interprer:
@@ -32,54 +34,46 @@ class Interprer:
         elif instruction == "end_program":
                 exit(0)
         elif instruction ==  "return":      # тут у нас какой-то бардак, давайте разбираться..
-                
                 return_value = 0
                 if args[0] in variables:
                     return_value = variables[args[0]]
-                elif args[0].isnumeric():
-                    return_value = int(args[0])
                 else:
-                    return (-1, "err")
-                # print(f"Here, [return_value] = {[return_value]}")
+                    return_value = int(args[0])
                 return [return_value]
             
         elif instruction ==  "add": # instruction = ["add", ["left_operand", "right_operand"]] ; left_operand -- имя локальной переменной, right_operand -- имя локальной переменной либо число
                 if args[1] in variables:
                     variables[args[0]] += variables[args[1]]
-                elif args[1].isnumeric():
-                    variables[args[0]] += int(args[1])
                 else:
-                    return (-1, "err")
+                    variables[args[0]] += int(args[1])
         elif instruction ==  "sub": # instruction = ["sub", ["left_operand", "right_operand"]]
                 if args[1] in variables:
                     variables[args[0]] -= variables[args[1]]
-                elif args[1].isnumeric():
-                    variables[args[0]] -= int(args[1])
                 else:
-                    return (-1, "err")
+                    variables[args[0]] -= int(args[1])
+                
         elif instruction ==  "mul": # instruction = ["mul", ["left_operand", "right_operand"]]
                 if args[1] in variables:
                     variables[args[0]] *= variables[args[1]]
-                elif args[1].isnumeric():
-                    variables[args[0]] *= int(args[1])
                 else:
-                    return (-1, "err")
+                    variables[args[0]] *= int(args[1])
         elif instruction ==  "div": # instruction = ["div", ["left_operand", "right_operand"]]
                 if args[1] in variables:
                     variables[args[0]] //= variables[args[1]]
-                elif args[1].isnumeric():
+                else :
                     variables[args[0]] //= int(args[1])
-                else:
-                    return (-1, "err")
             
         else:     # обрабатываем случай, когда вызывается другая функция
                 if instruction in functions:
-                    # print(f"Function {instruction} call received!")
+                    if DEBUG: print(f"Function {instruction} call received!")
                     tmp_list = copy.copy(args)
                     to_func_args = []
                     for arg in args:
-                        to_func_args.append(variables[arg])
-                    # print(f"to_func_args = {to_func_args}")
+                        if arg in variables:
+                            to_func_args.append(variables[arg])
+                        else:
+                            to_func_args.append(int(arg))
+                    if DEBUG: print(f"to_func_args = {to_func_args}")
                     code = functions[instruction].execute(to_func_args) 
                     if code == (-1, "err"):
                         return (-1, "err")
@@ -100,14 +94,16 @@ class Interprer:
             local_variables = {}
             for name, value in zip(self.args, args):
                 local_variables[name] = value
-            # print(f"local_variables : {local_variables}")
+            if DEBUG: print(f"local_variables : {local_variables}")
             for instruction in self.body:
-                # print(f"instruction = {instruction}")
-                # print(f"variables p = {local_variables}")
+                if DEBUG:
+                    print(f"instruction = {instruction}")
+                    print(f"variables p = {local_variables}")
                 tmp_executor = Interprer()
                 return_value = tmp_executor.local_executor(instruction = instruction[0], args = instruction[1], variables = local_variables, mode=FUNCTION)
-                # print(f"variables c = {local_variables}")
-                # print("--------------------------------")
+                if DEBUG:
+                    print(f"variables c = {local_variables}")
+                    print("--------------------------------")
                 if instruction[0] == "return":
                     return return_value
 
@@ -121,10 +117,11 @@ class Interprer:
 
         def parse(self):
             while True:
-                print("-------------------------")
-                print(f"variables : {self.variables}")
-                print(f"functions : {functions}")
-                print("-------------------------")
+                if DEBUG:
+                    print("-------------------------")
+                    print(f"variables : {self.variables}")
+                    print(f"functions : {functions}")
+                    print("-------------------------")
                 tokens_string = input().strip()
                 if not len(tokens_string):
                     continue
